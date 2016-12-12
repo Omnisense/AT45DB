@@ -36,7 +36,7 @@
 #define AT45_CHIP_ERASE     0x94, 0x80, 0x9A    // extended erase command bytes
 #define AT45_BINARY_PAGE    0x2A, 0x80, 0xA6    // extended binary page command bytes
 
-#define AT45_SPI_FREQ       (((MAX_SPI_CLK) < (16000000)) ? ((MAX_SPI_CLK) : (16000000)))         // SPI frequency
+#define AT45_SPI_FREQ       (((MAX_SPI_CLK) < (16000000)) ? (MAX_SPI_CLK) : (16000000))         // SPI frequency
 
 #define AT45_PAGE_SIZE      512
 
@@ -105,6 +105,7 @@ public:
      *  @enum CMDCODES
      *  @brief The device command register table for the AT45DB
      */
+
     enum CMDCODES
     {
         AT45_PAGE_READ              = 0xD2,         /// Main memory page read command code.
@@ -316,7 +317,7 @@ private:
      *
      * @return: TURE if in binary mode; otherwise FALSE.
      */
-    bool at45_set_pagesize_binary(void)
+    bool at45_set_pagesize_binary(void);
 
 };
 
