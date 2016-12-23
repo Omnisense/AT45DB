@@ -91,304 +91,6 @@ unsigned int AT45DB::init(void)
     return at45dbid;
 }
 
-
-
-/*
-
-void SPI_MX25R::writeEnable(void)
-{
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_WREN) ;
-    m_cs = CS_HIGH ;
-}
- 
-void SPI_MX25R::writeDisable(void)
-{
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_WRDI) ;
-    m_cs = CS_HIGH ;
-}    
- 
-void SPI_MX25R::resetEnable(void)
-{
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_RSTEN) ;
-    m_cs = CS_HIGH ;
-}  
- 
-void SPI_MX25R::reset(void)
-{
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_RST) ;
-    m_cs = CS_HIGH ;
-} 
- 
-void SPI_MX25R::pgmersSuspend(void)
-{
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_PESUS) ;
-    m_cs = CS_HIGH ;
-} 
- 
-void SPI_MX25R::pgmersResume(void)
-{
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_PERES) ;
-    m_cs = CS_HIGH ;
-} 
- 
-void SPI_MX25R::deepPowerdown(void)
-{
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_DP) ;
-    m_cs = CS_HIGH ;
-} 
- 
-void SPI_MX25R::setBurstlength(void)
-{
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_SBL) ;
-    m_cs = CS_HIGH ;
-} 
- 
-void SPI_MX25R::releaseReadenhaced(void)
-{
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_RRE) ;
-    m_cs = CS_HIGH ;
-} 
- 
-void SPI_MX25R::noOperation(void)
-{
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_NOP) ;
-    m_cs = CS_HIGH ;
-} 
- 
-void SPI_MX25R::enterSecureOTP(void)
-{
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_ENSO) ;
-    m_cs = CS_HIGH ;
-}
- 
-void SPI_MX25R::exitSecureOTP(void)
-{
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_EXSO) ;
-    m_cs = CS_HIGH ;
-} 
- 
-uint8_t SPI_MX25R::readStatus(void)
-{   
-    uint8_t data ;
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_RDSR) ;
-    data = m_spi.write(DUMMY) ;                     // dummy
-    m_cs = CS_HIGH ;
-    return( data ) ;
-}
-  
-uint32_t SPI_MX25R::readConfig(void)
-{   
-    uint8_t data;
-    uint32_t config32 = 0 ;
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_RDCR) ;                         // send 15h
-    data= m_spi.write(DUMMY)  ;                     // dumy to get 1st Byte out
-    config32 = config32 | data ;                    // put in 32b reg
-    data= m_spi.write(DUMMY) ;                      // dummy to get 2nd Byte out
-    config32 = (config32 << 8) | data ;             // shift and put in reg
-    m_cs = CS_HIGH ;
-    return( config32 ) ;  
-}
-
-uint8_t SPI_MX25R::readSecurity(void)
-{   
-    uint8_t data ;
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_RDSCUR) ;                       // send 2Bh
-    data = m_spi.write(DUMMY) ;                     // dummy
-    m_cs = CS_HIGH ;
-    return( data ) ;
-}
-  
-uint32_t SPI_MX25R::readID(void)
-{   
-    uint8_t data;
-    uint32_t data32 = 0 ;
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_RDID) ;                         // send 9Fh
-    data= m_spi.write(DUMMY)  ;                     // dumy to get 1st Byte out
-    data32 = data32 | data ;                        // put in 32b reg
-    data= m_spi.write(DUMMY) ;                      // dummy to get 2nd Byte out
-    data32 = (data32 << 8) | data ;                 // shift and put in reg
-    data= m_spi.write(DUMMY)  ;                     // dummy to get 3rd Byte out
-    data32 = (data32 << 8) | data ;                 // shift again and put in reg
-    m_cs = CS_HIGH ;
-    return( data32 ) ;  
-}
-
-uint32_t SPI_MX25R::readREMS(void)
-{   
-    uint8_t data;
-    uint32_t data32 = 0 ;
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_REMS) ;                         // send 90h
-    m_spi.write(DUMMY) ;                            // send DUMMY1
-    m_spi.write(DUMMY) ;                            // send DUMMY2
-    m_spi.write(0) ;                                // send address=0x00 to get Manu ID 1st.
-    data= m_spi.write(DUMMY)  ;                     // dumy to get Manufacturer ID= C2h out
-    data32 = data32 | data ;                        // put in 32b reg
-    data= m_spi.write(DUMMY) ;                      // dummy to get 2nd Byte = Device ID out
-    data32 = (data32 << 8) | data ;                 // shift and put in reg
-    m_cs = CS_HIGH ;
-    return( data32 ) ;  
-}
-
-uint8_t SPI_MX25R::readRES(void)
-{   
-    uint8_t data;
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_RES) ;                          // send ABh
-    m_spi.write(DUMMY) ;                            // send DUMMY1
-    m_spi.write(DUMMY) ;                            // send DUMMY2
-    m_spi.write(DUMMY) ;                            // send DUMMY3
-    data= m_spi.write(DUMMY)  ;                     // dumy to get Electronic Sig. out
-    m_cs = CS_HIGH ;
-    return( data ) ;  
-}
- 
-void SPI_MX25R::programPage(int addr, uint8_t *data, int numData)
-{
-    int i ;
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_PP) ;                           // Program Page 02h
-    m_spi.write((addr >> 16)&0xFF) ;                // adr 23:16
-    m_spi.write((addr >>  8)&0xFF) ;                // adr 15:8
-    m_spi.write(addr & 0xFF) ;                      // adr 7:0
-    for (i = 0 ; i < numData ; i++ ) {              // data = 00, 01, 02, .. to FEh, FFh = all 256 Bytes in 1 page. 
-        m_spi.write(data[i]) ;
-    }
-    m_cs = CS_HIGH ;
-    // poll in main
-}
- 
-void SPI_MX25R::writeStatusreg(int addr)            // Write SR cmd 01h + 3B data
-{   
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_WRSR) ;                         // Write SR cmd 01h
-    m_spi.write((addr >> 16)&0xFF) ;                // address
-    m_spi.write((addr >>  8)&0xFF) ;
-    m_spi.write(addr & 0xFF) ;
-    m_cs = CS_HIGH ;
-}
-
-void SPI_MX25R::writeSecurityreg(int addr)          // WRSCUR cmd 2Fh + 1B data
-{   
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_WRSCUR) ;                         // Write SR cmd 01h
-    m_spi.write(addr & 0xFF) ;
-    m_cs = CS_HIGH ;
-}
-
-void SPI_MX25R::blockErase(int addr)                // 64KB Block Erase
-{
-    uint8_t data[3] ;
-    data[0] = (addr >> 16) & 0xFF ;
-    data[1] = (addr >> 8) & 0xFF ;
-    data[2] = (addr & 0xFF) ;
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_BE) ;
-    for (int i = 0 ; i < 3 ; i++ ) {                // Address setting
-        m_spi.write(data[i]) ;
-    }
-    m_cs = CS_HIGH ;
-    // poll in main
-}
- 
-void SPI_MX25R::blockErase32KB(int addr)            // 32KB Block Erase
-{
-    uint8_t data[3] ;
-    data[0] = (addr >> 16) & 0xFF ;
-    data[1] = (addr >> 8) & 0xFF ;
-    data[2] = (addr & 0xFF) ;
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_32KBE) ;
-    for (int i = 0 ; i < 3 ; i++ ) {                // Address Setting
-        m_spi.write(data[i]) ;
-    }
-    m_cs = CS_HIGH ;
-    // poll in main
-}
- 
-void SPI_MX25R::sectorErase(int addr)               //  4KB Sector Erase
-{
-    uint8_t data[3] ;
-    data[0] = (addr >> 16) & 0xFF ;
-    data[1] = (addr >> 8) & 0xFF ;
-    data[2] = (addr & 0xFF) ;
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_SE) ;
-    for (int i = 0 ; i < 3 ; i++ ) {                // Address Setting
-        m_spi.write(data[i]) ;
-    }
-    m_cs = CS_HIGH ;
-    // poll in main
-}
- 
-void SPI_MX25R::chipErase(void)                     // Chip Erase
-{
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_CE) ;
-    m_cs = CS_HIGH ;
-    // poll in main
-}
- 
-uint8_t SPI_MX25R::read8(int addr)                  // Single Byte Read
-{
-    uint8_t data ;    
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_READ) ;                         // send 03h
-    m_spi.write((addr >> 16)&0xFF) ;
-    m_spi.write((addr >>  8)&0xFF) ;
-    m_spi.write(addr & 0xFF) ;
-    data = m_spi.write(DUMMY) ;                     // write data is dummy 
-    m_cs = CS_HIGH ;
-    return( data ) ;                                // return 1 byte 
-}
- 
-uint8_t SPI_MX25R::readSFDP(int addr)               // Read SFDP
-{
-    uint8_t data ;    
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_RDSFDP) ;                       // send cmd 5Ah
-    m_spi.write((addr >> 16)&0xFF) ;                // address[23:16]
-    m_spi.write((addr >>  8)&0xFF) ;                // address[15:8]
-    m_spi.write(addr & 0xFF) ;                      // address[7:0]
-    m_spi.write(DUMMY) ;                            // dummy cycle
-    data = m_spi.write(DUMMY) ;                     // return 1 byte 
-    m_cs = CS_HIGH ;
-    return( data ) ;
-}
- 
-uint8_t SPI_MX25R::readFREAD(int addr)              // x1 Fast Read Data Byte
-{
-    uint8_t data ;    
-    m_cs = CS_LOW ;
-    m_spi.write(CMD_FREAD) ;                        // send cmd 0BH
-    m_spi.write((addr >> 16)&0xFF) ;                // address[23:16]
-    m_spi.write((addr >>  8)&0xFF) ;                // address[15:8]
-    m_spi.write(addr & 0xFF) ;                      // address[7:0]
-    m_spi.write(DUMMY) ;                            // dummy cycle
-    data = m_spi.write(DUMMY) ;                     // return 1 byte 
-    m_cs = CS_HIGH ;
-    return( data ) ;
-}
-
-*/
-
-
 /*
  * Return 16bit value with status byte1 in the upper byte 
  * and byte2 in the lower byte.
@@ -459,7 +161,6 @@ bool AT45DB::at45_set_pagesize_binary(void)
     return AT45_STATUS_BINARY(status);
 }
 
-
 /* 
  * Read data directly from a single page in the main memory, 
  * bypassing both of the data buffers and leaving the contents 
@@ -470,27 +171,29 @@ bool AT45DB::at45_set_pagesize_binary(void)
  * than the beginning of the next page.
  *
  * Opcode (D2h) + 3-byte address + 4-byte dummy
- *
-bool_t at45_readpage(uint32 addr, uint8 *buff, uint32 size)
+ */
+bool AT45DB::at45_readpage(uint32_t addr, uint8_t *buff, uint32_t size)
 {
-    uint8 opcode[8] = {AT45_PAGE_READ};
-    struct lwspi_data spi_data;
-
-    opcode[1] = (addr & 0x00ff0000) >> 16;
-    opcode[2] = (addr & 0x0000ff00) >> 8;
-    opcode[3] = (addr & 0x000000ff) >> 0;
-
-    lwspi_dma_cs_assert(g_apl.sflash_spi_hdl, BSPCFG_APP_SFLASH_SPI_CS);
-    spi_data.header = opcode;
-    spi_data.header_len = NUM_OF_MEMBERS(opcode);
-    spi_data.data = buff;
-    spi_data.data_len = size;
-    lwspi_dma_rx(g_apl.sflash_spi_hdl, &spi_data);
-    lwspi_dma_flush_rx(g_apl.sflash_spi_hdl);
-    lwspi_dma_cs_deassert(g_apl.sflash_spi_hdl, BSPCFG_APP_SFLASH_SPI_CS);
-    return TRUE;
+    uint8_t     opcode[8];
+    uint32_t    i;
+    
+    opcode[0] = AT45_PAGE_READ;
+    opcode[1] = (uint8_t)((addr >> 16) & 0xff);
+    opcode[2] = (uint8_t)((addr >> 8) & 0xff);
+    opcode[3] = (uint8_t)(addr & 0xff);
+    opcode[4] = opcode[5] = opcode[6] = opcode[7] = DUMMY;
+    // now send command to chip and read back data
+    _at45cs = AT45_CS_LOW;
+    for (i=0; i<8; i++) {
+        _at45spi.write(opcode[i]) ;
+    }
+    for (i=0; i<size; i++) {
+        buff[i] = _at45spi.write(DUMMY) ;
+    }
+    _at45cs = AT45_CS_HIGH;
+    return 1;
 }
-*/
+
 /*
  * With the Main Memory Page Program through Buffer with Built-In Erase command, 
  * data is first clocked into either Buffer 1 or Buffer 2, the addressed page in 
@@ -509,141 +212,129 @@ bool_t at45_readpage(uint32 addr, uint8 *buff, uint32 size)
  *          namely the 'size' should always be 512, otherwise
  *          uninitialised data in AT45's internal buffer would be 
  *          programmed into the Main Memory page.
- *
-bool_t at45_writepage(uint32 addr, uint8 *buff, uint32 size)
+ */
+bool AT45DB::at45_writepage(uint32_t addr, uint8_t *buff, uint32_t size)
 {
-    static bool_t at45_buffer1 = TRUE;
-    struct lwspi_data spi_data;
-    uint8 opcode[4];
+    uint8_t     opcode[4];
+    uint32_t    i;
 
-    opcode[0] = at45_buffer1 ? AT45_PAGE_WRITE_BUF1 : AT45_PAGE_WRITE_BUF2;
-    at45_buffer1 = !at45_buffer1;
-
-    opcode[1] = (addr & 0x00ff0000) >> 16;
-    opcode[2] = (addr & 0x0000ff00) >> 8;
-    opcode[3] = (addr & 0x000000ff) >> 0;
-    lwspi_dma_cs_assert(g_apl.sflash_spi_hdl, BSPCFG_APP_SFLASH_SPI_CS);
-    spi_data.header = opcode;
-    spi_data.header_len = NUM_OF_MEMBERS(opcode);
-    spi_data.data = buff;
-    spi_data.data_len = size;
-    lwspi_dma_tx(g_apl.sflash_spi_hdl, &spi_data);
-    lwspi_dma_flush_tx(g_apl.sflash_spi_hdl);
-    lwspi_dma_cs_deassert(g_apl.sflash_spi_hdl, BSPCFG_APP_SFLASH_SPI_CS);
-    return TRUE;
+    // load buffer code and toggle buffer
+    opcode[0] = _at45_buffer ? AT45_PAGE_WRITE_BUF1 : AT45_PAGE_WRITE_BUF2;
+    _at45_buffer = !_at45_buffer;
+    opcode[1] = (uint8_t)((addr >> 16) & 0xff);
+    opcode[2] = (uint8_t)((addr >> 8) & 0xff);
+    opcode[3] = (uint8_t)(addr & 0xff);
+    // now send data the chip
+    _at45cs = AT45_CS_LOW;
+    for (i=0; i<4; i++) {
+        _at45spi.write(opcode[i]) ;
+    }
+    for (i=0; i<size; i++) {
+        _at45spi.write(buff[i]) ;
+    }
+    _at45cs = AT45_CS_HIGH;
+    return 1;
 }
 
-static bool_t g_at45_buffer1 = TRUE;
-bool_t at45_writebuffer(uint32 addr, uint8 *buff, uint32 size)
+bool AT45DB::at45_writebuffer(uint32_t addr, uint8_t *buff, uint32_t size)
 {
-    struct lwspi_data spi_data;
-    uint8 opcode[4];
+    uint8_t     opcode[4];
+    uint32_t    i;
 
-    opcode[0] = g_at45_buffer1 ? AT45_BUFFER_WRITE_BUF1 : AT45_BUFFER_WRITE_BUF2;
-
-    opcode[1] = (addr & 0x00ff0000) >> 16;
-    opcode[2] = (addr & 0x0000ff00) >> 8;
-    opcode[3] = (addr & 0x000000ff) >> 0;
-    lwspi_dma_cs_assert(g_apl.sflash_spi_hdl, BSPCFG_APP_SFLASH_SPI_CS);
-    spi_data.header = opcode;
-    spi_data.header_len = NUM_OF_MEMBERS(opcode);
-    spi_data.data = buff;
-    spi_data.data_len = size;
-    lwspi_dma_tx(g_apl.sflash_spi_hdl, &spi_data);
-    lwspi_dma_flush_tx(g_apl.sflash_spi_hdl);
-    lwspi_dma_cs_deassert(g_apl.sflash_spi_hdl, BSPCFG_APP_SFLASH_SPI_CS);
-    return TRUE;
+    opcode[0] = _g_at45_buffer ? AT45_BUFFER_WRITE_BUF1 : AT45_BUFFER_WRITE_BUF2;
+    opcode[1] = (uint8_t)((addr >> 16) & 0xff);
+    opcode[2] = (uint8_t)((addr >> 8) & 0xff);
+    opcode[3] = (uint8_t)(addr & 0xff);
+    // now send data the chip
+    _at45cs = AT45_CS_LOW;
+    for (i=0; i<4; i++) {
+        _at45spi.write(opcode[i]) ;
+    }
+    for (i=0; i<size; i++) {
+        _at45spi.write(buff[i]) ;
+    }
+    _at45cs = AT45_CS_HIGH;
+    return 1;
 }
 
-bool_t at45_buffer2memory(uint32 addr)
+bool AT45DB::at45_buffer2memory(uint32_t addr)
 {
-    struct lwspi_data spi_data;
-    uint8 opcode[4];
+    uint8_t     opcode[4];
+    uint32_t    i;
 
-    opcode[0] = g_at45_buffer1 ? AT45_BUFFER_TO_MAIN_MEMORY_BUF1 : 
-                                    AT45_BUFFER_TO_MAIN_MEMORY_BUF2;
-    g_at45_buffer1 = !g_at45_buffer1;
-
-    opcode[1] = (addr & 0x00ff0000) >> 16;
-    opcode[2] = (addr & 0x0000ff00) >> 8;
-    opcode[3] = (addr & 0x000000ff) >> 0;
-    lwspi_dma_cs_assert(g_apl.sflash_spi_hdl, BSPCFG_APP_SFLASH_SPI_CS);
-    spi_data.header = opcode;
-    spi_data.header_len = NUM_OF_MEMBERS(opcode);
-    spi_data.data = NULL;
-    spi_data.data_len = 0;
-    lwspi_dma_tx(g_apl.sflash_spi_hdl, &spi_data);
-    lwspi_dma_flush_tx(g_apl.sflash_spi_hdl);
-    lwspi_dma_cs_deassert(g_apl.sflash_spi_hdl, BSPCFG_APP_SFLASH_SPI_CS);
-    return TRUE;
+    opcode[0] = _g_at45_buffer ? AT45_BUFFER_TO_MAIN_MEMORY_BUF1 : AT45_BUFFER_TO_MAIN_MEMORY_BUF2;
+    _g_at45_buffer = !_g_at45_buffer;
+    opcode[1] = (uint8_t)((addr >> 16) & 0xff);
+    opcode[2] = (uint8_t)((addr >> 8) & 0xff);
+    opcode[3] = (uint8_t)(addr & 0xff);
+    // send command to chip
+    _at45cs = AT45_CS_LOW;
+    for (i=0; i<4; i++) {
+        _at45spi.write(opcode[i]) ;
+    }
+    _at45cs = AT45_CS_HIGH;
+    return 1;
 }
 
-bool_t at45_erasepage(uint32 addr)
+bool AT45DB::at45_erasepage(uint32_t addr)
 {
-    uint8 opcode[4] = {AT45_PAGE_ERASE};
-    struct lwspi_data spi_data;
+    uint8_t     opcode[4];
+    uint32_t    i;
 
-    opcode[1] = (addr & 0x00ff0000) >> 16;
-    opcode[2] = (addr & 0x0000ff00) >> 8;
-    opcode[3] = (addr & 0x000000ff) >> 0;
-    lwspi_dma_cs_assert(g_apl.sflash_spi_hdl, BSPCFG_APP_SFLASH_SPI_CS);
-    spi_data.header = opcode;
-    spi_data.header_len = NUM_OF_MEMBERS(opcode);
-    spi_data.data = NULL;
-    spi_data.data_len = 0;
-    lwspi_dma_tx(g_apl.sflash_spi_hdl, &spi_data);
-    lwspi_dma_flush_tx(g_apl.sflash_spi_hdl);
-    lwspi_dma_cs_deassert(g_apl.sflash_spi_hdl, BSPCFG_APP_SFLASH_SPI_CS);
-    return TRUE;
+    opcode[0] = AT45_PAGE_ERASE;
+    opcode[1] = (uint8_t)((addr >> 16) & 0xff);
+    opcode[2] = (uint8_t)((addr >> 8) & 0xff);
+    opcode[3] = (uint8_t)(addr & 0xff);
+    // send command to chip
+    _at45cs = AT45_CS_LOW;
+    for (i=0; i<4; i++) {
+        _at45spi.write(opcode[i]) ;
+    }
+    _at45cs = AT45_CS_HIGH;
+    return 1;
 }
-*/
+
 /*
  * In ultra deep power down mode it consumes less than 1uA.
  * In ultra deep power down mode, all commands including the 
  * Status Register Read and Resume from Deep Power-Down commands
  * will be ignored.
- *
-bool_t at45_ultra_deep_pwrdown_enter(void)
+ */
+bool AT45DB::at45_ultra_deep_pwrdown_enter(void)
 {
-    uint8 opcode[1] = {AT45_ULTRA_DEEP_PDOWN};
-    struct lwspi_data spi_data;
+    uint8_t     opcode[4];
 
-    lwspi_dma_cs_assert(g_apl.sflash_spi_hdl, BSPCFG_APP_SFLASH_SPI_CS);
-    spi_data.header = opcode;
-    spi_data.header_len = NUM_OF_MEMBERS(opcode);
-    spi_data.data = NULL;
-    spi_data.data_len = 0;
-    lwspi_dma_tx(g_apl.sflash_spi_hdl, &spi_data);
-    lwspi_dma_flush_tx(g_apl.sflash_spi_hdl);
-    lwspi_dma_cs_deassert(g_apl.sflash_spi_hdl, BSPCFG_APP_SFLASH_SPI_CS);
-    return TRUE;
+    opcode [0] = AT45_ULTRA_DEEP_PDOWN;
+    _at45cs = AT45_CS_LOW;
+    _at45spi.write(opcode[0]) ;
+    _at45cs = AT45_CS_HIGH;
+    return 1;
 }
 
-bool_t at45_ultra_deep_pwrdown_exit(void)
+/* 
+ * exit from ultra deep power down mode by 
+ * asserting CS pin for more than 20ns, 
+ * deasserting the CS then wait for 120us.
+ * the RAM buffers are undefined after wake from deep power down
+ */
+bool AT45DB::at45_ultra_deep_pwrdown_exit(void)
 {
-    struct lwspi_data spi_data;
-*/    
-    /* 
-     * exit from ultra deep power down mode by 
-     * asserting CS pin for more than 20ns, 
-     * deasserting the CS then wait for 120us.
-     *
-    lwspi_dma_cs_assert(g_apl.sflash_spi_hdl, BSPCFG_APP_SFLASH_SPI_CS);
-    BUSY_WAIT_US(1);
-    lwspi_dma_cs_deassert(g_apl.sflash_spi_hdl, BSPCFG_APP_SFLASH_SPI_CS);
-    return TRUE;
+    _at45cs = AT45_CS_LOW;
+    wait_us(1);                 // 1us
+    _at45cs = AT45_CS_HIGH;
+    Thread::wait(1);            // 1ms
+    return 1;
 }
 
-bool_t at45_is_ready(void)
+bool AT45DB::at45_is_ready(void)
 {
-    uint16 status = at45_get_status();
+    uint16_t status = AT45DB::at45_get_status();
     return AT45_STATUS_READY(status);
 }
 
-bool_t at45_is_ep_failed(void)
+bool AT45DB::at45_is_ep_failed(void)
 {
-    uint16 status = at45_get_status();
+    uint16_t status = AT45DB::at45_get_status();
     return AT45_STATUS_EP_ERROR(status);
 }
 
-*/

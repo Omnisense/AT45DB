@@ -19,12 +19,20 @@
  *
  */
  
+/*
+ * This driver library does not implement all available chip functions.
+ * Specifically missing are:
+ *      software reset
+ *      sector protection, lockdown and security
+ *      block, page, chip erase functions
+ *      freeze sector, and OTP programming
+ */
+ 
 #ifndef _AT45DB_H_
 #define _AT45DB_H_
  
 #include "mbed.h"
 #include "device.h"
-
  
 /**
  * Adesto Serial Flash Low Power Memories
@@ -36,6 +44,9 @@
 #define AT45_CHIP_ERASE     0x94, 0x80, 0x9A    // extended erase command bytes
 #define AT45_BINARY_PAGE    0x2A, 0x80, 0xA6    // extended binary page command bytes
 
+#ifndef MAX_SPI_CLK
+#define MAX_SPI_CLK         8000000
+#endif  // MAX_SPI_CLK
 #define AT45_SPI_FREQ       (((MAX_SPI_CLK) < (16000000)) ? (MAX_SPI_CLK) : (16000000))         // SPI frequency
 
 #define AT45_PAGE_SIZE      512
@@ -56,45 +67,6 @@
 #define AT45_STATUS_EP_ERROR(status)    (((status) & 0xff) & 0x20)
 /// Returns 1 if the manufacture and device ID are correct.
 #define AT45_MANU_AND_DEVICE_ID(id)     ((id) == 0x1f260001)
-
-/**
- * MX25R Series Register Command Table. 
- * x2 and x4 commands not currently supported with FRDM K64F platform
-
-#define CMD_READ      0x03  // x1 Normal Read Data Byte 
-#define CMD_FREAD     0x0B  // x1 Fast Read Data Byte
-#define CMD_2READ     0xBB  // x2 2READ 
-#define CMD_DREAD     0x3B  // x2 DREAD 
-#define CMD_4READ     0xEB  // x4 4READ 
-#define CMD_QREAD     0x6B  // x4 QREAD 
-#define CMD_PP        0x02  // Page Program 
-#define CMD_4PP       0x38  // x4 PP
-#define CMD_SE        0x20  // 4KB Sector Erase 
-#define CMD_32KBE     0x52  // 32KB Block Erase 
-#define CMD_BE        0xD8  // 64KB Block Erase 
-#define CMD_CE        0xC7  // Chip Erase 
-#define CMD_RDSFDP    0x5A  // Read SFDP 
-#define CMD_WREN      0x06  // Write Enable 
-#define CMD_WRDI      0x04  // Write Disable
-#define CMD_RDSR      0x05  // Read Status Register 
-#define CMD_RDCR      0x15  // Read Configuration Register 
-#define CMD_WRSR      0x01  // Write Status Register
-#define CMD_PESUS     0xB0  // Program/Erase Suspend 
-#define CMD_PERES     0x30  // Program/Erase Resume
-#define CMD_DP        0xB9  // Enter Deep Power Down 
-#define CMD_SBL       0xC0  // Set Burst Length 
-#define CMD_RDID      0x9F  // Read Manufacturer and JDEC Device ID 
-#define CMD_REMS      0x90  // Read Electronic Manufacturer and Device ID
-#define CMD_RES       0xAB  // Read Electronic ID
-#define CMD_ENSO      0xB1  // Enter Secure OTP
-#define CMD_EXSO      0xC1  // Exit Secure OTP
-#define CMD_RDSCUR    0x2B  // Read Security Register
-#define CMD_WRSCUR    0x2F  // Write Security Register
-#define CMD_NOP       0x00  // No Operation
-#define CMD_RSTEN     0x66  // Reset Enable 
-#define CMD_RST       0x99  // Reset 
-#define CMD_RRE       0xFF  // Release Read Enhanced Mode
-*/
  
 class AT45DB 
 {
@@ -174,122 +146,101 @@ public:
      */
     unsigned int at45_get_id(void);
 
-    
-/*
- int _mode ;
- 
-/// Write Enable
-  void writeEnable(void) ;
-  
-/// Write Disable
-  void writeDisable(void) ;
-  
-/// Reset Enable
-  void resetEnable(void) ;
-  
-/// Reset 
-  void reset(void) ;
- 
-/// Program or Erase Suspend
-  void pgmersSuspend(void) ;
- 
-/// Program or Erase Resume
-  void pgmersResume(void) ;
- 
-/// Enter Deep Power Down
-  void deepPowerdown(void) ;
- 
-/// Set Burst Length 
-  void setBurstlength(void) ;
- 
-/// Release from Read Enhanced Mode 
-  void releaseReadenhaced(void) ;
- 
-/// No Operation 
-  void noOperation(void) ;
- 
-/// Enter OTP Area 
-  void enterSecureOTP(void) ;
- 
-/// Exit OTP Area 
-  void exitSecureOTP(void) ;
- 
-/// Chip Erase
-  void chipErase(void) ;
-  
-/// Write Status and Configuration Reg 1 and 2
-  void writeStatusreg(int addr) ;
-  
-/// Write Security Reg
-  void writeSecurityreg(int addr) ;
-  
-** Page Program
- *
- * @param int addr start address
- * @param uint8_t *data data buffer
- * @param int numData the number of data to be written
- *
-  void programPage(int addr, uint8_t *data, int numData) ;
-  
-** Sector Erase
- *
- * @param int addr specify the sector to be erased
- *
-  void sectorErase(int addr) ;
-  
-** Block Erase
- *
- * @param int addr specify the sector to be erased
- *
-  void blockErase(int addr) ;
-  
-** 32KB Block Erase
- *
- * @param int addr specify the sector to be erased
- *
-  void blockErase32KB(int addr) ;
-  
-** Read Status Register
- *
- * @returns uint8_t status register value
- *
-  uint8_t readStatus(void) ;
-  
-** Read Security Register
- *
- * @returns uint8_t security register value
- *
-  uint8_t readSecurity(void) ;
+    /* 
+     * Read data directly from a single page in the main memory, 
+     * bypassing both of the data buffers and leaving the contents 
+     * of the buffers unchanged.
+     *
+     * When the end of a page in main memory is reached, the device will
+     * continue reading back at the beginning of the same page rather 
+     * than the beginning of the next page.
+     *
+     * Opcode (D2h) + 3-byte address + 4-byte dummy
+     *
+     * @param addr = address from which to start reading
+     * @param *buff = pointer to destination memory buffer
+     * @param size = number of bytes to read
+     * @return true = success
+     */
+    bool at45_readpage(uint32_t addr, uint8_t *buff, uint32_t size);
 
-** Read Manufacturer and JEDEC Device ID
- *
- * @returns uint32_t Manufacturer ID, Mem Type, Device ID
- *
-  uint32_t readID(void) ;
-  
-** Read Electronic Manufacturer and Device ID
- *
- * @returns uint32_t Manufacturer ID, Device ID
- *
-  uint32_t readREMS(void) ;
-  
-** Read Electronic ID
- *
- * @returns uint8_t Device ID
- *
-  uint8_t readRES(void) ;
-  
-** Read Configuration Register
- *
- * @returns uint32_t configuration register value
- *
-  uint32_t readConfig(void) ;
-  uint8_t readSFDP(int addr) ;        
-  uint8_t readFREAD(int addr) ; 
-  uint8_t read8(int addr) ;
-  void write8(int addr, uint8_t data) ;
-  
-*/
+    /*
+     * With the Main Memory Page Program through Buffer with Built-In Erase command, 
+     * data is first clocked into either Buffer 1 or Buffer 2, the addressed page in 
+     * memory is then automatically erased, and then the contents of the appropriate 
+     * buffer are programmed into the just-erased main memory page.
+     *
+     * When there is a low-to-high transition on the CS pin, the device will first 
+     * erase the selected page in main memory (the erased state is a Logic 1) and 
+     * then program the data stored in the buffer into that main memory page.
+     *
+     * Opcode (82h or 85h) + 3-byte address
+     *
+     * NOTE: 1. The 'addr' should always align with the boundary of a page, 
+     *          otherwise the AT45's internal buffer may wrap.
+     *       2. The 'buff' should always contain a whole page's data, 
+     *          namely the 'size' should always be 512, otherwise
+     *          uninitialised data in AT45's internal buffer would be 
+     *          programmed into the Main Memory page.
+     *
+     * @param addr = address to start writing into flash
+     * @param *buff = pointer to memory buffer to use as data source
+     * @param size = buffer size, should always be 512 bytes
+     * @return true = success
+     */
+    bool at45_writepage(uint32_t addr, uint8_t *buff, uint32_t size);
+
+    /*
+     * Writes data into the currently selected RAM buffer
+     *
+     * @param addr = destination address in RAM buffer (9 bits)
+     * @param *buff = pointer to source in CPU memory space
+     * @param size = size - number of bytes to be transferred
+     * @return true = success
+     */
+    bool at45_writebuffer(uint32_t addr, uint8_t *buff, uint32_t size);
+
+    /*
+     * Writes pre-loaded buffer into flash page
+     *
+     * @param addr = destination page address in flash (low 9 bits = 0)
+     * @return true = success
+     */
+    bool at45_buffer2memory(uint32_t addr);
+    
+    /*
+     * Erases flash page
+     *
+     * @param addr = destination page address in flash (low 9 bits = 0)
+     * @return true = success
+     */
+    bool at45_erasepage(uint32_t addr);
+
+    /*
+     * In ultra deep power down mode it consumes less than 1uA.
+     * In ultra deep power down mode, all commands including the 
+     * Status Register Read and Resume from Deep Power-Down commands
+     * will be ignored.
+     */
+    bool at45_ultra_deep_pwrdown_enter(void);
+
+    /* 
+     * exit from ultra deep power down mode by 
+     * asserting CS pin for more than 20ns, 
+     * deasserting the CS then wait for 120us.
+     * the RAM buffers are undefined after wake from deep power down
+     */
+    bool at45_ultra_deep_pwrdown_exit(void);
+
+    /*
+     * test for AT45DB chip ready
+     */
+    bool at45_is_ready(void);
+
+    /*
+     * test for erase failed status
+     */
+    bool at45_is_ep_failed(void);
  
 
 private:
@@ -297,6 +248,8 @@ private:
     SPI             _at45spi;
     DigitalOut      _at45cs;
     unsigned int    _at45id;
+    bool            _at45_buffer = true;
+    bool            _g_at45_buffer = true;
     
     /** Initialise the device and SPI
      *  Set to the power on reset conditions
